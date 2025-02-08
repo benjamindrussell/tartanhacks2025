@@ -7,28 +7,40 @@ import { WorkflowForm } from '../components/WorkflowForm'
 
 export function Home() {
   const [workflowsInProgress, setWorkflowsInProgress] = useState<WorkflowInProgress[]>([])
+  const [recentWorkflows, setRecentWorkflows] = useState<Workflow[]>([])
   
-  const recentWorkflows: Workflow[] = [
-    { id: '1', title: 'Geology Paper Workflow', files: 24 },
-    { id: '2', title: 'Coding assignment workflow', files: 102 },
-    { id: '3', title: 'Email Response Workflow', files: 84 },
-    { id: '4', title: 'Personal Media', files: 45 },
-    { id: '5', title: 'Reddingo Backup', files: 32 },
-    { id: '6', title: 'Root', files: 105 },
-  ]
-
   const fetchWorkflows = async () => {
     try {
       const response = await fetch('http://localhost:5050/api/workflows');
-      console.log(response);
       if (!response.ok) throw new Error('Failed to fetch workflows');
       const data = await response.json();
-      setWorkflowsInProgress(data.map((workflow: any) => ({
-        ...workflow,
+      
+      // Map server data to our interfaces
+      const formattedWorkflows = data.map((workflow: any) => ({
+        id: workflow._id,
+        title: workflow.title,
+        description: workflow.description,
+        active: workflow.active,
         createdAt: new Date(workflow.createdAt).toLocaleString()
-      })));
+      }));
+
+      // Split workflows into active and all
+      setWorkflowsInProgress(data.filter((w: any) => w.active));
+      setRecentWorkflows(formattedWorkflows);  // Show all workflows in recent
     } catch (error) {
       console.error('Error fetching workflows:', error);
+    }
+  };
+
+  const handleToggleActive = async (workflowId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5050/api/workflows/${workflowId}/toggle-active`, {
+        method: 'PATCH'
+      });
+      if (!response.ok) throw new Error('Failed to toggle workflow status');
+      fetchWorkflows(); // Refresh both lists
+    } catch (error) {
+      console.error('Error toggling workflow status:', error);
     }
   };
 
@@ -46,11 +58,12 @@ export function Home() {
           {/* <SearchBar value={searchText} onChange={setSearchText} /> */}
           {/* <ActionableMotions motions={actionableMotions} /> */}
 
-          <WorkflowForm onSuccess={() => {
-            fetchWorkflows(); // Refresh workflows after adding new one
-          }} />
+          <WorkflowForm onSuccess={fetchWorkflows} />
 
-          <RecentWorkflows workflows={recentWorkflows} />
+          <RecentWorkflows 
+            workflows={recentWorkflows} 
+            onToggleActive={handleToggleActive} 
+          />
         </div>
 
         {/* Workflows in Progress column */}

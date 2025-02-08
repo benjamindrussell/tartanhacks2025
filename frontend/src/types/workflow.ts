@@ -1,7 +1,8 @@
 export interface Workflow {
   id: string;
   title: string;
-  files: number;
+  files?: number;
+  active?: boolean;
 }
 
 export interface WorkflowInProgress {
@@ -10,5 +11,6 @@ export interface WorkflowInProgress {
   description: string;
   action: string;
   urls: string[];
+  active: boolean;
   createdAt: string;
 } 

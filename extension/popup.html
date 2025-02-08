@@ -5,48 +5,206 @@
   <style>
     body {
       width: 300px;
-      padding: 10px;
+      padding: 15px;
+      background-color: #1a1a1a;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
+
+    h2 {
+      color: white;
+      font-size: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
     button {
       width: 100%;
-      padding: 8px;
-      margin: 5px 0;
-    }
-    #responseContainer {
-      margin-top: 10px;
       padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      min-height: 50px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
+      margin: 5px 0;
+      background-color: #2d2d2d;
+      border: 1px solid #3d3d3d;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
     }
+
+    button:hover {
+      background-color: #3d3d3d;
+    }
+
+    #responseContainer {
+      margin-top: 15px;
+      padding: 15px;
+      border: 1px solid #3d3d3d;
+      border-radius: 12px;
+      background-color: #2d2d2d;
+      min-height: 50px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      background-color: #2d2d2d;
+      border: 1px solid #3d3d3d;
+      color: white;
+      border-radius: 6px;
+    }
+
+    .workflow-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      color: #4CAF50;
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .workflow-checkbox {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #4CAF50;
+      border-radius: 4px;
+      margin-left: auto;
+      cursor: pointer;
+      position: relative;
+      background: #1a1a1a;
+    }
+
+    .workflow-checkbox:checked {
+      background: #4CAF50;
+    }
+
+    .workflow-checkbox:checked::after {
+      content: "✓";
+      color: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+    }
+
+    .workflow-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .workflow-title {
+      color: #4CAF50;
+      margin-bottom: 20px;
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brain-logo {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    .workflow-text {
+      color: #4CAF50;
+      font-size: 14px;
+      padding-left: 4px;
+    }
+
+    .assistant-section {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #3d3d3d;
+    }
+
+    .assistant-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+
+    #assistantResponse {
+      background-color: #1a1a1a;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 10px;
+      min-height: 60px;
+    }
+
     .button-container {
       display: flex;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 15px;
     }
+
     .button-container button {
       flex: 1;
-      padding: 5px 10px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      cursor: pointer;
+      padding: 8px 15px;
     }
+
     #yesButton {
       background-color: #4CAF50;
-      color: white;
+      border: none;
     }
+
     #noButton {
-      background-color: #f44336;
-      color: white;
+      background-color: #2d2d2d;
+      border: 1px solid #3d3d3d;
+    }
+
+    pre {
+      background-color: #1a1a1a;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
     }
   </style>
+  <!-- Load Tesseract locally -->
+  <script src="lib/tesseract.min.js"></script>
 </head>
 <body>
+<<<<<<< HEAD
+  <h2>
+    <img src="images/logo.jpg" alt="Brain Logo" class="brain-logo">
+    Workflows in Progress
+  </h2>
+  <div id="responseContainer">
+    <div class="workflow-sections">
+      <div>
+        <div class="section-title">Active Workflows</div>
+        <div id="activeWorkflows"></div>
+      </div>
+      <div>
+        <div class="section-title">Recent Workflows</div>
+        <div id="recentWorkflows"></div>
+      </div>
+    </div>
+    <div class="assistant-section">
+      <div class="assistant-header">Your Assistant</div>
+      <div id="assistantResponse"></div>
+    </div>
+  </div>
+  
+  <!-- Load our scripts last -->
+=======
   <h2>My Chrome Extension</h2>
   <button id="testButton">Test OpenAI</button>
   <div id="responseContainer"></div>
+>>>>>>> main
   <script src="config.js"></script>
   <script src="popup.js"></script>
 </body>

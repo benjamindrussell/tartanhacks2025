@@ -81,3 +81,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Set interval to decrease focus over time
+setInterval(() => updateFocus(true), 30000); // Decrease focus every 30 seconds of inactivity
+
+async function loadWorkflows() {
+  try {
+    const response = await fetch('http://localhost:5050/api/workflows');
+    const workflows = await response.json();
+    
+    const activeWorkflows = workflows.filter(w => w.active);
+    const recentWorkflows = workflows.sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    // Update active workflows
+    const activeContainer = document.getElementById('activeWorkflows');
+    activeContainer.innerHTML = activeWorkflows.map(workflow => `
+      <div class="workflow-item">
+        <div class="workflow-text">${workflow.description}</div>
+        <input type="checkbox" 
+               class="workflow-checkbox" 
+               data-id="${workflow._id}" 
+               ${workflow.active ? 'checked' : ''}
+               onchange="toggleWorkflowActive('${workflow._id}')">
+      </div>
+    `).join('') || '<div class="workflow-text">No active workflows</div>';
+
+    // Update recent workflows
+    const recentContainer = document.getElementById('recentWorkflows');
+    recentContainer.innerHTML = recentWorkflows.map(workflow => `
+      <div class="workflow-item">
+        <div class="workflow-text">${workflow.description}</div>
+        <input type="checkbox" 
+               class="workflow-checkbox" 
+               data-id="${workflow._id}" 
+               ${workflow.active ? 'checked' : ''}
+               onchange="toggleWorkflowActive('${workflow._id}')">
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Error loading workflows:', error);
+  }
+}
+
+async function toggleWorkflowActive(id) {
+  try {
+    await fetch(`http://localhost:5050/api/workflows/${id}/toggle-active`, {
+      method: 'PATCH'
+    });
+    loadWorkflows(); // Refresh the display
+  } catch (error) {
+    console.error('Error toggling workflow:', error);
+  }
+}
+
+// Load workflows when popup opens
+document.addEventListener('DOMContentLoaded', loadWorkflows);

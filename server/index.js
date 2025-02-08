@@ -22,20 +22,12 @@ const URI = process.env.ATLAS_URI || '';
 
 let cachedWorkflows = [];
 
-const loadWorkflows = async () => {
-    try {
-        cachedWorkflows = await Workflow.find({});
-        console.log(`Loaded ${cachedWorkflows.length} workflows from database`);
-    } catch (error) {
-        console.error("Error loading workflows:", error);
-    }
-};
-
 const updateWorkflowCache = (workflow) => {
-    // Remove any existing workflow with the same action
     cachedWorkflows = cachedWorkflows.filter(w => w.action !== workflow.action);
-    // Add the new workflow
-    cachedWorkflows.push(workflow);
+    cachedWorkflows.push({
+        ...workflow.toObject(),
+        active: false
+    });
     console.log(`Updated workflow cache. Total workflows: ${cachedWorkflows.length}`);
 };
 
@@ -43,15 +35,23 @@ const findWorkflowByAction = (action) => {
     return cachedWorkflows.find(workflow => workflow.action === action);
 };
 
-// Export functions needed by routes
-module.exports = {
-    updateWorkflowCache
+const loadWorkflows = async () => {
+    try {
+        const workflows = await Workflow.find({});
+        cachedWorkflows = workflows.map(w => ({
+            ...w.toObject(),
+            active: false
+        }));
+        console.log(`Loaded ${cachedWorkflows.length} workflows from database`);
+    } catch (error) {
+        console.error("Error loading workflows:", error);
+    }
 };
 
 mongoose.connect(URI)
 .then(async () => {
     console.log("Connected to mongodb");
-    await loadWorkflows(); // Load workflows after connecting
+    await loadWorkflows();
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
