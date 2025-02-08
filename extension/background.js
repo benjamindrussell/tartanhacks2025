@@ -23,6 +23,21 @@ function initializeWebSocket() {
                     chrome.tabs.create({ url: url });
                 });
             }
+            
+            // Handle low focus trigger
+            if (data.type === 'triggerScreenshot') {
+                // Get current window and tab
+                chrome.windows.getCurrent(async (window) => {
+                    // Open the popup
+                    chrome.action.openPopup();
+                    
+                    // Wait a short moment for popup to open
+                    setTimeout(() => {
+                        // Simulate clicking the test button
+                        chrome.runtime.sendMessage({ action: "triggerScreenshot" });
+                    }, 500);
+                });
+            }
         } catch (error) {
             console.error('Error processing message:', error);
         }
