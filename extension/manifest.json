@@ -7,7 +7,8 @@
     "activeTab",
     "scripting",
     "tabs",
-    "background"
+    "background",
+    "desktopCapture"
   ],
   "host_permissions": [
     "*://*.google.com/*",
@@ -25,5 +26,15 @@
   },
   "action": {
     "default_popup": "popup.html"
-  }
+  },
+  "web_accessible_resources": [{
+    "resources": [
+      "lib/worker.min.js",
+      "lib/tesseract.min.js",
+      "lib/tesseract-core.wasm.js",
+      "lib/lang-data/eng.traineddata",
+      "images/logo.jpg"
+    ],
+    "matches": ["<all_urls>"]
+  }]
 }

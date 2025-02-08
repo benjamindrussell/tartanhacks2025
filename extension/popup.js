@@ -299,97 +299,226 @@ const todoList = {
   }
 };
 
-async function checkEssayProgress(taskId) {
+async function captureAndAnalyzeDoc() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return null;
 
+  const responseContainer = document.getElementById('responseContainer');
+  
   try {
-    const result = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => {
-        // Debug which selectors are present
-        console.log('Available elements:', {
-          'kix-appview-editor': !!document.querySelector('.kix-appview-editor'),
-          'docs-editor-container': !!document.querySelector('.docs-editor-container'),
-          'kix-paragraphrenderer': document.querySelectorAll('.kix-paragraphrenderer').length,
-          'docs-editor': !!document.querySelector('.docs-editor')
-        });
+    // Check if Tesseract is loaded
+    if (typeof Tesseract === 'undefined') {
+      throw new Error('Tesseract library not loaded');
+    }
 
-        let content = '';
-        let sourceSelector = '';
+    // Capture the visible part of the page
+    responseContainer.innerHTML = `<div>Capturing screenshot...</div>`;
+    const screenshot = await chrome.tabs.captureVisibleTab(null, {
+      format: 'png'
+    });
 
-        // Try each selector and log which one worked
-        if (document.querySelector('.kix-appview-editor')) {
-          content = document.querySelector('.kix-appview-editor').innerText;
-          sourceSelector = 'kix-appview-editor';
-        } else if (document.querySelector('.docs-editor-container')) {
-          content = document.querySelector('.docs-editor-container').innerText;
-          sourceSelector = 'docs-editor-container';
-        } else if (document.querySelectorAll('.kix-paragraphrenderer').length) {
-          content = Array.from(document.querySelectorAll('.kix-paragraphrenderer'))
-            .map(p => p.innerText)
-            .join('\n');
-          sourceSelector = 'kix-paragraphrenderer';
-        } else if (document.querySelector('.docs-editor')) {
-          content = document.querySelector('.docs-editor').innerText;
-          sourceSelector = 'docs-editor';
+    responseContainer.innerHTML = `
+      <div style="margin: 10px 0; padding: 5px; background: #f0fff0; border-radius: 4px;">
+        <strong>Captured Screenshot:</strong><br>
+        <img src="${screenshot}" style="max-width: 100%; margin-top: 10px;">
+      </div>
+      <div id="progress">Starting OCR analysis...</div>
+    `;
+
+    const progressDiv = document.getElementById('progress');
+
+    // Try to create worker with more error details
+    let worker;
+    try {
+      console.log('Creating worker with path:', chrome.runtime.getURL('lib/worker.min.js'));
+      worker = await Tesseract.createWorker({
+        workerPath: chrome.runtime.getURL('lib/worker.min.js'),
+        // Add these additional configurations
+        corePath: chrome.runtime.getURL('lib/tesseract-core.wasm.js'),
+        langPath: chrome.runtime.getURL('lib/lang-data'),
+        logger: m => {
+          console.log('OCR Progress:', m);
+          if (progressDiv) {
+            progressDiv.textContent = `OCR Progress: ${m.status} (${(m.progress * 100).toFixed(1)}%)`;
+          }
         }
+      });
+    } catch (workerError) {
+      console.error('Worker creation error:', {
+        error: workerError,
+        message: workerError.message,
+        stack: workerError.stack
+      });
+      throw new Error(`Failed to create Tesseract worker: ${workerError.message || 'Worker initialization failed'}`);
+    }
 
-        console.log('Content found using selector:', sourceSelector);
-        const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
-        
-        return {
-          content,
-          wordCount,
-          sourceSelector
-        };
-      }
+    // Initialize worker
+    await worker.loadLanguage('eng');
+    await worker.initialize('eng');
+
+    // Perform OCR
+    const { data: { text } } = await worker.recognize(screenshot);
+    await worker.terminate();
+
+    // Calculate word count and prepare summary
+    const words = text.trim().split(/\s+/);
+    const wordCount = words.length;
+    
+    // Get summary from OpenAI
+    const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{
+          role: "system",
+          content: "You are a summarizer. Provide a 2-3 sentence summary of the given text."
+        }, {
+          role: "user",
+          content: `Summarize this text in 2-3 sentences:\n\n${text}`
+        }]
+      })
     });
 
-    console.log('Content extraction result:', {
-      found: !!result[0]?.result?.content,
-      selector: result[0]?.result?.sourceSelector,
-      wordCount: result[0]?.result?.wordCount
-    });
+    const summaryData = await summaryResponse.json();
+    const summary = summaryData.choices?.[0]?.message?.content || 'No summary available';
 
-    return result[0]?.result;
+    // Display results with better formatting
+    responseContainer.innerHTML = `
+      <div style="margin: 10px 0; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <div style="background: #4CAF50; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold;">
+            ${wordCount} words
+          </div>
+        </div>
+
+        <div style="margin-top: 15px;">
+          <div style="font-weight: bold; color: #333; margin-bottom: 5px;">Content Summary:</div>
+          <div style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 13px; line-height: 1.4;">
+            ${summary}
+          </div>
+        </div>
+
+        <details style="margin-top: 15px;">
+          <summary style="cursor: pointer; color: #666;">View Full Text</summary>
+          <pre style="white-space: pre-wrap; margin-top: 10px; background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px; max-height: 200px; overflow-y: auto;">
+${text}
+          </pre>
+        </details>
+      </div>
+    `;
+
+    return {
+      content: text,
+      wordCount: wordCount,
+      summary: summary
+    };
+
   } catch (error) {
-    console.log('Progress check error:', error);
+    const errorDetails = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      tesseractStatus: {
+        loaded: typeof Tesseract !== 'undefined',
+        version: typeof Tesseract !== 'undefined' ? Tesseract.version : 'not loaded',
+        methods: typeof Tesseract !== 'undefined' ? Object.keys(Tesseract) : [],
+        createWorkerExists: typeof Tesseract?.createWorker === 'function'
+      },
+      files: {
+        workerPath: chrome.runtime.getURL('lib/worker.min.js'),
+        tesseractPath: chrome.runtime.getURL('lib/tesseract.min.js'),
+        workerExists: await fetch(chrome.runtime.getURL('lib/worker.min.js'))
+          .then(() => true)
+          .catch(() => false)
+      }
+    };
+
+    console.error('Detailed Error:', errorDetails);
+    responseContainer.innerHTML = `
+      <div style="color: red; padding: 10px; border: 1px solid red; margin: 10px 0; border-radius: 4px;">
+        <strong>Error Details:</strong><br>
+        Type: ${errorDetails.name}<br>
+        Message: ${errorDetails.message}<br>
+        Tesseract Loaded: ${errorDetails.tesseractStatus.loaded}<br>
+        Tesseract Version: ${errorDetails.tesseractStatus.version}<br>
+        <br>
+        <details>
+          <summary>Technical Details</summary>
+          <pre style="font-size: 12px;">${JSON.stringify(errorDetails, null, 2)}</pre>
+        </details>
+      </div>
+    `;
     return null;
   }
+}
+
+// Update the checkEssayProgress function to use the new method
+async function checkEssayProgress(taskId) {
+  return captureAndAnalyzeDoc();
 }
 
 async function askOpenAIForNextTask(content, wordCount) {
   const responseContainer = document.getElementById('responseContainer');
   
   try {
-    // Formulate the prompt
+    // Formulate a more detailed prompt
     const prompt = `
-Current essay status:
+Current essay analysis:
 - Focus level: ${focusLevel.toFixed(2)} (below threshold of ${FOCUS_THRESHOLD})
 - Word count: ${wordCount}
-- Full essay content: "${content}"
+- Content structure analysis:
+  * Introduction present: ${content.toLowerCase().includes('introduction') || content.includes('background')}
+  * Main points identified: ${content.split('.').length} sentences
+  * Conclusion present: ${content.toLowerCase().includes('conclusion') || content.toLowerCase().includes('therefore') || content.toLowerCase().includes('in summary')}
 
-Available tasks:
+Full essay content:
+"""
+${content}
+"""
+
+Available tasks to switch to:
 ${Object.entries(todoList)
   .filter(([_, task]) => !task.completed)
   .map(([_, task]) => `${task.name} (${task.type})`)
   .join(', ')}
 
-Based on the essay content, current focus level, and cognitive science research:
-1. Analyze the current state of the essay and if this is a good stopping point.
-2. Recommend whether to switch to email writing or calendar event creation.
-3. Explain why this switch would be beneficial given the current mental state and essay progress.
+Based on:
+1. Current essay structure and completion state
+2. Focus level (${focusLevel.toFixed(2)})
+3. Cognitive science research about task switching
+4. Word count (${wordCount} words)
 
-Format response as: "ANALYSIS: [essay content and progress analysis]. RECOMMENDATION: [email or calendar]. REASONING: [scientific explanation]"`;
+Please provide:
+1. ANALYSIS: Evaluate the current state of the essay (structure, completeness, natural stopping point)
+2. RECOMMENDATION: Should the user switch to email writing or calendar event creation?
+3. REASONING: Explain why this switch would be beneficial given the current mental state, essay progress, and cognitive load
+
+Format response as: 
+"ANALYSIS: [detailed content analysis]
+RECOMMENDATION: [email or calendar]
+REASONING: [scientific explanation]"`;
 
     // Show what we're sending to OpenAI
-    responseContainer.innerHTML = `
+    const systemPrompt = "You are a productivity assistant specializing in analyzing writing progress and recommending optimal task switches based on cognitive load and focus levels.";
+    const userPrompt = prompt;  // This is your existing detailed prompt
+
+    responseContainer.innerHTML += `
       <div style="margin: 10px 0; padding: 5px; background: #e6f3ff; border-radius: 4px;">
-        <strong>Sending to OpenAI:</strong><br>
-        <pre style="white-space: pre-wrap;">${prompt}</pre>
+        <strong>Task Switch Analysis Prompts:</strong><br>
+        <div style="margin-top: 10px;">
+          <strong>System:</strong>
+          <pre style="white-space: pre-wrap; font-size: 12px;">${systemPrompt}</pre>
+        </div>
+        <div style="margin-top: 10px;">
+          <strong>User:</strong>
+          <pre style="white-space: pre-wrap; font-size: 12px;">${userPrompt}</pre>
+        </div>
       </div>
-      <div>Waiting for OpenAI response...</div>
+      <div>Waiting for task switch analysis...</div>
     `;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -402,10 +531,10 @@ Format response as: "ANALYSIS: [essay content and progress analysis]. RECOMMENDA
         model: "gpt-3.5-turbo",
         messages: [{
           role: "system",
-          content: "You are a productivity assistant. When focus drops below threshold, analyze the essay content and recommend whether to switch tasks."
+          content: systemPrompt
         }, {
           role: "user",
-          content: prompt
+          content: userPrompt
         }]
       })
     });
@@ -416,14 +545,10 @@ Format response as: "ANALYSIS: [essay content and progress analysis]. RECOMMENDA
       responseContainer.innerHTML += `<div style="color: red;">Error: ${data.error.message}</div>`;
     } else if (data.choices && data.choices[0]) {
       const recommendation = data.choices[0].message.content;
-      responseContainer.innerHTML = `
-        <div style="margin: 10px 0; padding: 5px; background: #e6f3ff; border-radius: 4px;">
-          <strong>Sent to OpenAI:</strong><br>
-          <pre style="white-space: pre-wrap;">${prompt}</pre>
-        </div>
+      responseContainer.innerHTML += `
         <div style="margin: 10px 0; padding: 5px; background: #f0fff0; border-radius: 4px;">
-          <strong>OpenAI Response:</strong><br>
-          ${recommendation}
+          <strong>Analysis & Recommendation:</strong><br>
+          <pre style="white-space: pre-wrap;">${recommendation}</pre>
         </div>
         <div class="button-container">
           <button id="yesButton">Switch Task</button>
