@@ -32,6 +32,17 @@ const main = async () => {
         wss.on("connection", (ws) => {
             console.log("Client connected to WebSocket");
 
+            // Send test data every 5 seconds if no Neurosity data
+            const testInterval = setInterval(() => {
+                const testData = {
+                    type: "focus",
+                    probability: Math.random()  // Random focus value between 0-1
+                };
+                console.log("Sending test data:", testData);
+                ws.send(JSON.stringify(testData));
+            }, 5000);
+
+            // Real Neurosity data when available
             neurosity.focus().subscribe((focus) => {
                 console.log(`Focus: ${focus.probability}`);
                 ws.send(JSON.stringify({ type: "focus", probability: focus.probability }));
@@ -47,14 +58,18 @@ const main = async () => {
                 ws.send(JSON.stringify({ type: "kinesis", action: "rightHandPinch" }));
             });
 
-            neurosity.kinesis("doubleBlink").subscribe(() => {
-                console.log("Double blink detected!");
-                ws.send(JSON.stringify({ type: "kinesis", action: "doubleBlink" }));
-            });
+            // neurosity.kinesis("doubleBlink").subscribe(() => {
+            //     console.log("Double blink detected!");
+            //     ws.send(JSON.stringify({ type: "kinesis", action: "doubleBlink" }));
+            // });
 
             ws.on("close", () => {
                 console.log("Client disconnected");
+                clearInterval(testInterval);  // Clean up interval on disconnect
             });
+
+            // Send initial connection confirmation
+            ws.send(JSON.stringify({ type: "connection", status: "connected" }));
         });
 
         console.log("WebSocket server running on ws://localhost:8080");
