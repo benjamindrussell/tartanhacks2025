@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "tabs"
+    "tabs",
+    "background"
   ],
   "host_permissions": [
     "*://*.google.com/*",
@@ -14,11 +15,14 @@
     "*://*.replit.com/*",
     "*://*.overleaf.com/*",
     "*://*.instructure.com/*",
-    "*://docs.google.com/*"
+    "*://docs.google.com/*",
+    "http://localhost:3000/*",
+    "ws://localhost:8080/*"
   ],
-  "host_permissions": [
-    "http://localhost:3000/*"
-  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "action": {
     "default_popup": "popup.html"
   }
