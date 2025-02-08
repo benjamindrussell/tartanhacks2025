@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { WorkflowAction } from '../types/workflow';
 
 const AVAILABLE_ACTIONS = [
   'leftHandPinch',

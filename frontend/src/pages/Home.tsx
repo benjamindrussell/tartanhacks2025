@@ -1,14 +1,11 @@
 import { useState } from 'react'
 import { Header } from '../components/Header'
-import { SearchBar } from '../components/SearchBar'
-import { ActionableMotions } from '../components/ActionableMotions'
 import { RecentWorkflows } from '../components/RecentWorkflows'
 import { WorkflowsInProgress } from '../components/WorkflowsInProgress'
 import type { Workflow, WorkflowInProgress } from '../types/workflow'
 import { WorkflowForm } from '../components/WorkflowForm'
 
 export function Home() {
-  const [searchText, setSearchText] = useState('')
   const [workflowsInProgress, setWorkflowsInProgress] = useState<WorkflowInProgress[]>([])
   
   const recentWorkflows: Workflow[] = [
@@ -18,12 +15,6 @@ export function Home() {
     { id: '4', title: 'Personal Media', files: 45 },
     { id: '5', title: 'Reddingo Backup', files: 32 },
     { id: '6', title: 'Root', files: 105 },
-  ]
-
-  const actionableMotions = [
-    'Close Fist',
-    'Index Finger and Thumb together',
-    'Third Finger and Thumb together',
   ]
 
   const handleSubmit = (e: React.FormEvent) => {
