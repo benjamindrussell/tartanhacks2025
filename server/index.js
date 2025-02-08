@@ -1,6 +1,33 @@
 const { Neurosity } = require("@neurosity/sdk");
 const WebSocket = require("ws");
+const dotenv = require("dotenv");
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
 require('dotenv').config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Import routes
+const workflowRoutes = require('./routes/workflows');
+
+// Use routes
+app.use('/api/workflows', workflowRoutes);
+
+const PORT = process.env.PORT || 5050;
+const URI = process.env.ATLAS_URI || '';
+
+mongoose.connect(URI)
+.then(() => {
+  console.log("Connected to mongodb")
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}).catch((error) => {
+  console.log(error);
+});
 
 const deviceId = process.env.DEVICE_ID || "";
 const email = process.env.EMAIL || "";

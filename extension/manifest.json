@@ -16,6 +16,9 @@
     "*://*.instructure.com/*",
     "*://docs.google.com/*"
   ],
+  "host_permissions": [
+    "http://localhost:3000/*"
+  ],
   "action": {
     "default_popup": "popup.html"
   }
