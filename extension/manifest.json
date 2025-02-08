@@ -5,7 +5,15 @@
   "description": "A basic Chrome extension",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://*.google.com/*",
+    "*://*.github.com/*",
+    "*://*.replit.com/*",
+    "*://*.overleaf.com/*",
+    "*://*.instructure.com/*"
   ],
   "action": {
     "default_popup": "popup.html"

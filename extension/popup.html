@@ -12,11 +12,43 @@
       padding: 8px;
       margin: 5px 0;
     }
+    #responseContainer {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      min-height: 50px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .button-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .button-container button {
+      flex: 1;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    #yesButton {
+      background-color: #4CAF50;
+      color: white;
+    }
+    #noButton {
+      background-color: #f44336;
+      color: white;
+    }
   </style>
 </head>
 <body>
   <h2>My Chrome Extension</h2>
   <button id="actionButton">Click Me</button>
+  <button id="testButton">Test OpenAI</button>
+  <div id="responseContainer"></div>
+  <script src="config.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
