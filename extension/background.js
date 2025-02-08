@@ -49,5 +49,5 @@ initializeWebSocket();
 
 // Listen for extension installation or update
 chrome.runtime.onInstalled.addListener(() => {
-    initializeWebSocket();
+    console.log('Extension installed or updated');
 }); 
