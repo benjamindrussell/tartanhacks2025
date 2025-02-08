@@ -1,5 +1,243 @@
+// document.getElementById('actionButton').addEventListener('click', async () => {
+//   try {
+//     // Get the active tab
+//     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+//     if (!tab?.id) {
+//       throw new Error('No active tab found');
+//     }
+
+//     // Execute script in the active tab
+//     await chrome.scripting.executeScript({
+//       target: { tabId: tab.id },
+//       func: () => {
+//         alert('Hello from the extension!');
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error:', error);
+//   }
+// });
+
+// // Predefined task types
+// const tasks = {
+//   'essay': {
+//     name: 'Essay Writing',
+//     checkProgress: {
+//       wordCount: true
+//     }
+//   },
+//   'email': {
+//     name: 'Email Writing',
+//     checkProgress: {
+//       wordCount: true
+//     }
+//   },
+//   'calendar': {
+//     name: 'Calendar Event',
+//     checkProgress: {
+//       inputActivity: true
+//     }
+//   }
+// };
+
+// // Define todo list with just 3 tasks
+// const todoList = {
+//   'task1': {
+//     name: 'Write Research Essay',
+//     type: 'essay',
+//     completed: false
+//   },
+//   'task2': {
+//     name: 'Write Project Update Email',
+//     type: 'email',
+//     completed: false
+//   },
+//   'task3': {
+//     name: 'Schedule Team Meeting',
+//     type: 'calendar',
+//     completed: false
+//   }
+// };
+
+// async function checkEssayProgress(taskId) {
+//   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+//   if (!tab?.id) return null;
+
+//   try {
+//     const result = await chrome.scripting.executeScript({
+//       target: { tabId: tab.id },
+//       func: () => {
+//         // Get just the main content area where user types
+//         const contentArea = document.querySelector('.kix-appview-editor');
+//         if (!contentArea) {
+//           console.log('Could not find Google Docs editor');
+//           return null;
+//         }
+
+//         // Get only the paragraphs of user-typed content
+//         const contentElements = contentArea.querySelectorAll('.kix-paragraphrenderer');
+//         const content = Array.from(contentElements)
+//           // Get text content of each paragraph
+//           .map(p => {
+//             // Get only the text spans, which contain actual content
+//             const textSpans = p.querySelectorAll('.kix-wordhtmlgenerator-word-node');
+//             return Array.from(textSpans)
+//               .map(span => span.textContent)
+//               .join(' ');
+//           })
+//           // Filter out empty paragraphs
+//           .filter(text => text.trim().length > 0)
+//           // Join paragraphs with newlines
+//           .join('\n');
+
+//         console.log('Found content:', content);
+//         const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+        
+//         return {
+//           content,
+//           wordCount
+//         };
+//       }
+//     });
+
+//     console.log('Content extraction result:', {
+//       found: !!result[0]?.result?.content,
+//       wordCount: result[0]?.result?.wordCount,
+//       sample: result[0]?.result?.content?.substring(0, 100) + '...'
+//     });
+
+//     return result[0]?.result;
+//   } catch (error) {
+//     console.log('Progress check error:', error);
+//     return null;
+//   }
+// }
+
+// async function askOpenAIForNextTask(content, wordCount) {
+//   const responseContainer = document.getElementById('responseContainer');
+  
+//   try {
+//     // Formulate the prompt
+//     const prompt = `
+// Current essay status:
+// - Focus level: ${focusLevel.toFixed(2)} (below threshold of ${FOCUS_THRESHOLD})
+// - Word count: ${wordCount}
+// - Full essay content: "${content}"
+
+// Available tasks:
+// ${Object.entries(todoList)
+//   .filter(([_, task]) => !task.completed)
+//   .map(([_, task]) => `${task.name} (${task.type})`)
+//   .join(', ')}
+
+// Based on the essay content, current focus level, and cognitive science research:
+// 1. Analyze the current state of the essay and if this is a good stopping point.
+// 2. Recommend whether to switch to email writing or calendar event creation.
+// 3. Explain why this switch would be beneficial given the current mental state and essay progress.
+
+// Format response as: "ANALYSIS: [essay content and progress analysis]. RECOMMENDATION: [email or calendar]. REASONING: [scientific explanation]"`;
+
+//     // Show what we're sending to OpenAI
+//     responseContainer.innerHTML = `
+//       <div style="margin: 10px 0; padding: 5px; background: #e6f3ff; border-radius: 4px;">
+//         <strong>Sending to OpenAI:</strong><br>
+//         <pre style="white-space: pre-wrap;">${prompt}</pre>
+//       </div>
+//       <div>Waiting for OpenAI response...</div>
+//     `;
+
+//     const response = await fetch('https://api.openai.com/v1/chat/completions', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${config.OPENAI_API_KEY}`
+//       },
+//       body: JSON.stringify({
+//         model: "gpt-3.5-turbo",
+//         messages: [{
+//           role: "system",
+//           content: "You are a productivity assistant. When focus drops below threshold, analyze the essay content and recommend whether to switch tasks."
+//         }, {
+//           role: "user",
+//           content: prompt
+//         }]
+//       })
+//     });
+
+//     const data = await response.json();
+    
+//     if (data.error) {
+//       responseContainer.innerHTML += `<div style="color: red;">Error: ${data.error.message}</div>`;
+//     } else if (data.choices && data.choices[0]) {
+//       const recommendation = data.choices[0].message.content;
+//       responseContainer.innerHTML = `
+//         <div style="margin: 10px 0; padding: 5px; background: #e6f3ff; border-radius: 4px;">
+//           <strong>Sent to OpenAI:</strong><br>
+//           <pre style="white-space: pre-wrap;">${prompt}</pre>
+//         </div>
+//         <div style="margin: 10px 0; padding: 5px; background: #f0fff0; border-radius: 4px;">
+//           <strong>OpenAI Response:</strong><br>
+//           ${recommendation}
+//         </div>
+//         <div class="button-container">
+//           <button id="yesButton">Switch Task</button>
+//           <button id="noButton">Continue Writing</button>
+//         </div>
+//       `;
+//     }
+//   } catch (error) {
+//     console.error('Error:', error);
+//     responseContainer.textContent = 'Error analyzing writing progress';
+//   }
+// }
+
+// // Create task selector UI
+// function createTaskSelector() {
+//   const container = document.createElement('div');
+//   container.innerHTML = `
+//     <select id="taskSelector" style="width: 100%; margin-bottom: 10px; padding: 5px;">
+//       <option value="">Select your current task</option>
+//       ${Object.entries(todoList).map(([id, task]) => 
+//         `<option value="${id}" ${task.completed ? 'disabled' : ''}>
+//           ${task.name} ${task.completed ? '(Done)' : ''}
+//         </option>`
+//       ).join('')}
+//     </select>
+//   `;
+  
+//   document.getElementById('responseContainer').prepend(container);
+// }
+
+// // Initialize
+// document.addEventListener('DOMContentLoaded', function() {
+//   createTaskSelector();
+//   const testButton = document.getElementById('testButton');
+//   testButton.addEventListener('click', () => {
+//     const currentTask = todoList[document.getElementById('taskSelector').value];
+//     if (currentTask && currentTask.type === 'essay') {
+//       checkEssayProgress(currentTask.id).then(progress => {
+//         if (progress) {
+//           askOpenAIForNextTask(progress.content, progress.wordCount);
+//         }
+//       });
+//     }
+//   });
+// });
+
+// // Add focus level tracking
+// let focusLevel = 0.2;  // Set to 0.2, which is below FOCUS_THRESHOLD of 0.3
+// const FOCUS_THRESHOLD = 0.3;
+
+// Define your Next.js API URL
+const API_URL = 'http://localhost:3000/api'; // Update this with your actual URL in production
+
 document.getElementById('actionButton').addEventListener('click', async () => {
   try {
+    // Call the Next.js API
+    const response = await fetch(API_URL);
+    const data = await response.json();
+    
     // Get the active tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
@@ -7,12 +245,13 @@ document.getElementById('actionButton').addEventListener('click', async () => {
       throw new Error('No active tab found');
     }
 
-    // Execute script in the active tab
+    // Execute script in the active tab to show the message
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: () => {
-        alert('Hello from the extension!');
-      }
+      func: (message) => {
+        alert(message);
+      },
+      args: [data.message]
     });
   } catch (error) {
     console.error('Error:', error);
@@ -215,9 +454,83 @@ function createTaskSelector() {
   document.getElementById('responseContainer').prepend(container);
 }
 
-// Initialize
+// Add WebSocket connection
+let ws;
+let lastFocusFromNeurosity = null;
+
+function initializeWebSocket() {
+    ws = new WebSocket('ws://localhost:8080');
+
+    ws.onopen = () => {
+        console.log('Connected to WebSocket server');
+        const responseContainer = document.getElementById('responseContainer');
+        responseContainer.innerHTML = `
+            <div style="background: #e6ffe6; padding: 5px; margin: 5px; border-radius: 4px;">
+                Connected to WebSocket server
+            </div>
+        `;
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Received data:', data);
+            
+            const responseContainer = document.getElementById('responseContainer');
+            
+            // Create a new div for the message
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = 'background: #f0f0f0; padding: 5px; margin: 5px; border-radius: 4px;';
+            
+            if (data.type === 'focus') {
+                messageDiv.textContent = `Focus level: ${(data.probability * 100).toFixed(1)}%`;
+                focusLevel = data.probability;
+            } else if (data.type === 'connection') {
+                messageDiv.textContent = `Server status: ${data.status}`;
+            } else {
+                messageDiv.textContent = `Received: ${JSON.stringify(data)}`;
+            }
+            
+            // Keep only the last 5 messages
+            const messages = responseContainer.getElementsByTagName('div');
+            if (messages.length > 5) {
+                responseContainer.removeChild(messages[1]); // Keep connection message
+            }
+            
+            responseContainer.appendChild(messageDiv);
+        } catch (error) {
+            console.error('Error processing message:', error);
+        }
+    };
+
+    ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        const responseContainer = document.getElementById('responseContainer');
+        responseContainer.innerHTML += `
+            <div style="background: #ffe6e6; padding: 5px; margin: 5px; border-radius: 4px;">
+                Error connecting to WebSocket server
+            </div>
+        `;
+    };
+
+    ws.onclose = () => {
+        console.log('Disconnected from WebSocket server');
+        const responseContainer = document.getElementById('responseContainer');
+        responseContainer.innerHTML += `
+            <div style="background: #fff3e6; padding: 5px; margin: 5px; border-radius: 4px;">
+                Disconnected from server - attempting to reconnect...
+            </div>
+        `;
+        // Attempt to reconnect after 5 seconds
+        setTimeout(initializeWebSocket, 5000);
+    };
+}
+
+// Modify your DOMContentLoaded event listener to initialize WebSocket
 document.addEventListener('DOMContentLoaded', function() {
   createTaskSelector();
+  initializeWebSocket();
+  
   const testButton = document.getElementById('testButton');
   testButton.addEventListener('click', () => {
     const currentTask = todoList[document.getElementById('taskSelector').value];

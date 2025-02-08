@@ -13,7 +13,8 @@
     "*://*.github.com/*",
     "*://*.replit.com/*",
     "*://*.overleaf.com/*",
-    "*://*.instructure.com/*"
+    "*://*.instructure.com/*",
+    "*://docs.google.com/*"
   ],
   "action": {
     "default_popup": "popup.html"
