@@ -89,22 +89,6 @@ const main = async () => {
         wss.on("connection", (ws) => {
             console.log("Client connected to WebSocket");
 
-<<<<<<< HEAD
-            // Send test data every 5 seconds if no Neurosity data
-            const testInterval = setInterval(() => {
-                const testData = {
-                    type: "focus",
-                    probability: Math.random()  // Random focus value between 0-1
-                };
-                console.log("Sending test data:", testData);
-                ws.send(JSON.stringify(testData));
-            }, 5000);
-
-            // Real Neurosity data when available
-            neurosity.focus().subscribe((focus) => {
-                console.log(`Focus: ${focus.probability}`);
-                ws.send(JSON.stringify({ type: "focus", probability: focus.probability }));
-=======
             // neurosity.focus().subscribe((focus) => {
             //     console.log(`Focus: ${focus.probability}`);
             //     ws.send(JSON.stringify({ type: "focus", probability: focus.probability }));
@@ -131,7 +115,6 @@ const main = async () => {
             // Clean up interval when connection closes
             ws.on("close", () => {
                 clearInterval(testInterval);
->>>>>>> ben
             });
 
             neurosity.kinesis("leftHandPinch").subscribe(() => {
@@ -168,12 +151,6 @@ const main = async () => {
                 }
             });
 
-<<<<<<< HEAD
-            // neurosity.kinesis("doubleBlink").subscribe(() => {
-            //     console.log("Double blink detected!");
-            //     ws.send(JSON.stringify({ type: "kinesis", action: "doubleBlink" }));
-            // });
-=======
             neurosity.kinesis("leftArm").subscribe(() => {
                 console.log("Left arm gesture detected!");
                 const workflow = findWorkflowByAction("leftArm");
@@ -190,7 +167,6 @@ const main = async () => {
                     ws.send(JSON.stringify({ type: "kinesis", action: "leftArm" }));
                 }
             });
->>>>>>> ben
 
             neurosity.kinesis("rightArm").subscribe(() => {
                 console.log("Right arm gesture detected!");
