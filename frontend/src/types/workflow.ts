@@ -4,15 +4,11 @@ export interface Workflow {
   files: number;
 }
 
-export interface WorkflowAction {
-  description: string;
-  urls: string[];
-}
-
 export interface WorkflowInProgress {
-  id: string;
+  _id: string;
   title: string;
   description: string;
+  action: string;
+  urls: string[];
   createdAt: string;
-  actions: WorkflowAction[];
 } 

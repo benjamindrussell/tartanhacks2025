@@ -223,9 +223,97 @@ function createTaskSelector() {
   document.getElementById('responseContainer').prepend(container);
 }
 
-// Initialize
+// Add WebSocket connection
+let ws;
+let lastFocusFromNeurosity = null;
+
+function initializeWebSocket() {
+    ws = new WebSocket('ws://localhost:8080');
+
+    ws.onopen = () => {
+        console.log('Connected to WebSocket server');
+        const responseContainer = document.getElementById('responseContainer');
+        responseContainer.innerHTML = `
+            <div style="background: #e6ffe6; padding: 5px; margin: 5px; border-radius: 4px;">
+                Connected to WebSocket server
+            </div>
+        `;
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Received data:', data);
+            
+            const responseContainer = document.getElementById('responseContainer');
+
+            // Handle Kinesis action data
+            if (data.type === 'kinesis' && data.workflow) {
+                responseContainer.innerHTML = `
+                    <div style="background: #f0f8ff; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Action Triggered: ${data.action}</h3>
+                        <p style="margin: 0 0 10px 0;">${data.workflow.description}</p>
+                        <div style="margin-top: 10px;">
+                            ${data.workflow.urls.map(url => `
+                                <a href="${url}" target="_blank" style="display: block; margin: 5px 0; color: #3498db; text-decoration: none;">
+                                    ${url}
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                return;
+            } else if (data.type === 'kinesis') {
+                responseContainer.innerHTML = `
+                    <div style="background: #f0f8ff; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Action Triggered: ${data.action}</h3>
+                        <p style="margin: 0 0 10px 0;">No workflow configured for this action.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Existing focus level handling
+            if (data.focus !== undefined) {
+                responseContainer.innerHTML = `
+                    <div style="background: #e6ffe6; padding: 5px; margin: 5px; border-radius: 4px;">
+                        Current focus level: ${data.focus.toFixed(2)}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error processing message:', error);
+        }
+    };
+
+    ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        const responseContainer = document.getElementById('responseContainer');
+        responseContainer.innerHTML += `
+            <div style="background: #ffe6e6; padding: 5px; margin: 5px; border-radius: 4px;">
+                Error connecting to WebSocket server
+            </div>
+        `;
+    };
+
+    ws.onclose = () => {
+        console.log('Disconnected from WebSocket server');
+        const responseContainer = document.getElementById('responseContainer');
+        responseContainer.innerHTML += `
+            <div style="background: #fff3e6; padding: 5px; margin: 5px; border-radius: 4px;">
+                Disconnected from server - attempting to reconnect...
+            </div>
+        `;
+        // Attempt to reconnect after 5 seconds
+        setTimeout(initializeWebSocket, 5000);
+    };
+}
+
+// Modify your DOMContentLoaded event listener to initialize WebSocket
 document.addEventListener('DOMContentLoaded', function() {
   createTaskSelector();
+  initializeWebSocket();
+  
   const testButton = document.getElementById('testButton');
   testButton.addEventListener('click', () => {
     const currentTask = todoList[document.getElementById('taskSelector').value];

@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Workflow = require('../models/Workflow');
+const { updateWorkflowCache } = require('../index');
 
 // Get all workflows
 router.get('/', async (req, res) => {
@@ -28,15 +29,17 @@ router.get('/:id', async (req, res) => {
 // Create a new workflow
 router.post('/', async (req, res) => {
   try {
-    const { title, description, actions } = req.body;
+    const { title, description, action, urls } = req.body;
     
     const newWorkflow = new Workflow({
       title,
       description,
-      actions
+      action,
+      urls
     });
 
     const savedWorkflow = await newWorkflow.save();
+    updateWorkflowCache(savedWorkflow);
     res.status(201).json(savedWorkflow);
   } catch (error) {
     res.status(400).json({ message: error.message });
