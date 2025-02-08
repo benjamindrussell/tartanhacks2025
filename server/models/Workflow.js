@@ -1,16 +1,5 @@
 const mongoose = require('mongoose');
 
-const actionSchema = new mongoose.Schema({
-  action: {
-    type: String,
-    required: true
-  },
-  urls: [{
-    type: String,
-    required: true
-  }]
-});
-
 const workflowSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -20,7 +9,14 @@ const workflowSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  actions: [actionSchema]
+  action: {
+    type: String,
+    required: true
+  },
+  urls: [{
+    type: String,
+    required: true
+  }]
 }, {
   timestamps: true
 });

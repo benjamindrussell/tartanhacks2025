@@ -477,27 +477,41 @@ function initializeWebSocket() {
             console.log('Received data:', data);
             
             const responseContainer = document.getElementById('responseContainer');
-            
-            // Create a new div for the message
-            const messageDiv = document.createElement('div');
-            messageDiv.style.cssText = 'background: #f0f0f0; padding: 5px; margin: 5px; border-radius: 4px;';
-            
-            if (data.type === 'focus') {
-                messageDiv.textContent = `Focus level: ${(data.probability * 100).toFixed(1)}%`;
-                focusLevel = data.probability;
-            } else if (data.type === 'connection') {
-                messageDiv.textContent = `Server status: ${data.status}`;
-            } else {
-                messageDiv.textContent = `Received: ${JSON.stringify(data)}`;
+
+            // Handle Kinesis action data
+            if (data.type === 'kinesis' && data.workflow) {
+                responseContainer.innerHTML = `
+                    <div style="background: #f0f8ff; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Action Triggered: ${data.action}</h3>
+                        <p style="margin: 0 0 10px 0;">${data.workflow.description}</p>
+                        <div style="margin-top: 10px;">
+                            ${data.workflow.urls.map(url => `
+                                <a href="${url}" target="_blank" style="display: block; margin: 5px 0; color: #3498db; text-decoration: none;">
+                                    ${url}
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                return;
+            } else if (data.type === 'kinesis') {
+                responseContainer.innerHTML = `
+                    <div style="background: #f0f8ff; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Action Triggered: ${data.action}</h3>
+                        <p style="margin: 0 0 10px 0;">No workflow configured for this action.</p>
+                    </div>
+                `;
+                return;
             }
-            
-            // Keep only the last 5 messages
-            const messages = responseContainer.getElementsByTagName('div');
-            if (messages.length > 5) {
-                responseContainer.removeChild(messages[1]); // Keep connection message
+
+            // Existing focus level handling
+            if (data.focus !== undefined) {
+                responseContainer.innerHTML = `
+                    <div style="background: #e6ffe6; padding: 5px; margin: 5px; border-radius: 4px;">
+                        Current focus level: ${data.focus.toFixed(2)}
+                    </div>
+                `;
             }
-            
-            responseContainer.appendChild(messageDiv);
         } catch (error) {
             console.error('Error processing message:', error);
         }

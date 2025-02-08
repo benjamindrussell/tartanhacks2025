@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const Workflow = require('./models/Workflow');
 require('dotenv').config();
 
 const app = express();
@@ -19,14 +20,43 @@ app.use('/api/workflows', workflowRoutes);
 const PORT = process.env.PORT || 5050;
 const URI = process.env.ATLAS_URI || '';
 
+let cachedWorkflows = [];
+
+const loadWorkflows = async () => {
+    try {
+        cachedWorkflows = await Workflow.find({});
+        console.log(`Loaded ${cachedWorkflows.length} workflows from database`);
+    } catch (error) {
+        console.error("Error loading workflows:", error);
+    }
+};
+
+const updateWorkflowCache = (workflow) => {
+    // Remove any existing workflow with the same action
+    cachedWorkflows = cachedWorkflows.filter(w => w.action !== workflow.action);
+    // Add the new workflow
+    cachedWorkflows.push(workflow);
+    console.log(`Updated workflow cache. Total workflows: ${cachedWorkflows.length}`);
+};
+
+const findWorkflowByAction = (action) => {
+    return cachedWorkflows.find(workflow => workflow.action === action);
+};
+
+// Export functions needed by routes
+module.exports = {
+    updateWorkflowCache
+};
+
 mongoose.connect(URI)
-.then(() => {
-  console.log("Connected to mongodb")
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+.then(async () => {
+    console.log("Connected to mongodb");
+    await loadWorkflows(); // Load workflows after connecting
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
 }).catch((error) => {
-  console.log(error);
+    console.log(error);
 });
 
 const deviceId = process.env.DEVICE_ID || "";
@@ -59,6 +89,7 @@ const main = async () => {
         wss.on("connection", (ws) => {
             console.log("Client connected to WebSocket");
 
+<<<<<<< HEAD
             // Send test data every 5 seconds if no Neurosity data
             const testInterval = setInterval(() => {
                 const testData = {
@@ -73,16 +104,109 @@ const main = async () => {
             neurosity.focus().subscribe((focus) => {
                 console.log(`Focus: ${focus.probability}`);
                 ws.send(JSON.stringify({ type: "focus", probability: focus.probability }));
+=======
+            // neurosity.focus().subscribe((focus) => {
+            //     console.log(`Focus: ${focus.probability}`);
+            //     ws.send(JSON.stringify({ type: "focus", probability: focus.probability }));
+            // });
+
+            // Add test interval for rightArm signal
+            const testInterval = setInterval(() => {
+                console.log("Simulating right arm gesture!");
+                const workflow = findWorkflowByAction("rightArm");
+                if (workflow) {
+                    ws.send(JSON.stringify({ 
+                        type: "kinesis", 
+                        action: "rightArm",
+                        workflow: {
+                            description: workflow.description,
+                            urls: workflow.urls
+                        }
+                    }));
+                } else {
+                    ws.send(JSON.stringify({ type: "kinesis", action: "rightArm" }));
+                }
+            }, 10000); // Sends signal every 10 seconds
+
+            // Clean up interval when connection closes
+            ws.on("close", () => {
+                clearInterval(testInterval);
+>>>>>>> ben
             });
 
             neurosity.kinesis("leftHandPinch").subscribe(() => {
                 console.log("Left hand pinch detected!");
-                ws.send(JSON.stringify({ type: "kinesis", action: "leftHandPinch" }));
+                const workflow = findWorkflowByAction("leftHandPinch");
+                if (workflow) {
+                    ws.send(JSON.stringify({ 
+                        type: "kinesis", 
+                        action: "leftHandPinch",
+                        workflow: {
+                            description: workflow.description,
+                            urls: workflow.urls
+                        }
+                    }));
+                } else {
+                    ws.send(JSON.stringify({ type: "kinesis", action: "leftHandPinch" }));
+                }
             });
 
             neurosity.kinesis("rightHandPinch").subscribe(() => {
                 console.log("Right hand pinch detected!");
-                ws.send(JSON.stringify({ type: "kinesis", action: "rightHandPinch" }));
+                const workflow = findWorkflowByAction("rightHandPinch");
+                if (workflow) {
+                    ws.send(JSON.stringify({ 
+                        type: "kinesis", 
+                        action: "rightHandPinch",
+                        workflow: {
+                            description: workflow.description,
+                            urls: workflow.urls
+                        }
+                    }));
+                } else {
+                    ws.send(JSON.stringify({ type: "kinesis", action: "rightHandPinch" }));
+                }
+            });
+
+<<<<<<< HEAD
+            // neurosity.kinesis("doubleBlink").subscribe(() => {
+            //     console.log("Double blink detected!");
+            //     ws.send(JSON.stringify({ type: "kinesis", action: "doubleBlink" }));
+            // });
+=======
+            neurosity.kinesis("leftArm").subscribe(() => {
+                console.log("Left arm gesture detected!");
+                const workflow = findWorkflowByAction("leftArm");
+                if (workflow) {
+                    ws.send(JSON.stringify({ 
+                        type: "kinesis", 
+                        action: "leftArm",
+                        workflow: {
+                            description: workflow.description,
+                            urls: workflow.urls
+                        }
+                    }));
+                } else {
+                    ws.send(JSON.stringify({ type: "kinesis", action: "leftArm" }));
+                }
+            });
+>>>>>>> ben
+
+            neurosity.kinesis("rightArm").subscribe(() => {
+                console.log("Right arm gesture detected!");
+                const workflow = findWorkflowByAction("rightArm");
+                if (workflow) {
+                    ws.send(JSON.stringify({ 
+                        type: "kinesis", 
+                        action: "rightArm",
+                        workflow: {
+                            description: workflow.description,
+                            urls: workflow.urls
+                        }
+                    }));
+                } else {
+                    ws.send(JSON.stringify({ type: "kinesis", action: "rightArm" }));
+                }
             });
 
             // neurosity.kinesis("doubleBlink").subscribe(() => {
