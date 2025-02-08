@@ -95,81 +95,82 @@ const main = async () => {
             // });
 
             // Add test interval for rightArm signal
-            const testInterval = setInterval(() => {
-                console.log("Simulating right arm gesture!");
-                const workflow = findWorkflowByAction("rightArm");
-                if (workflow) {
-                    ws.send(JSON.stringify({ 
-                        type: "kinesis", 
-                        action: "rightArm",
-                        workflow: {
-                            description: workflow.description,
-                            urls: workflow.urls
-                        }
-                    }));
-                } else {
-                    ws.send(JSON.stringify({ type: "kinesis", action: "rightArm" }));
-                }
-            }, 10000); // Sends signal every 10 seconds
+            // const testInterval = setInterval(() => {
+            //     console.log("Simulating right arm gesture!");
+            //     const workflow = findWorkflowByAction("rightArm");
+            //     if (workflow) {
+            //         ws.send(JSON.stringify({ 
+            //             type: "kinesis", 
+            //             action: "rightArm",
+            //             workflow: {
+            //                 description: workflow.description,
+            //                 urls: workflow.urls
+            //             }
+            //         }));
+            //     } else {
+            //         ws.send(JSON.stringify({ type: "kinesis", action: "rightArm" }));
+            //     }
+            // }, 10000); // Sends signal every 10 seconds
 
             // Clean up interval when connection closes
             ws.on("close", () => {
                 clearInterval(testInterval);
             });
 
-            neurosity.kinesis("leftHandPinch").subscribe(() => {
-                console.log("Left hand pinch detected!");
-                const workflow = findWorkflowByAction("leftHandPinch");
-                if (workflow) {
-                    ws.send(JSON.stringify({ 
-                        type: "kinesis", 
-                        action: "leftHandPinch",
-                        workflow: {
-                            description: workflow.description,
-                            urls: workflow.urls
-                        }
-                    }));
-                } else {
-                    ws.send(JSON.stringify({ type: "kinesis", action: "leftHandPinch" }));
-                }
-            });
+            // neurosity.kinesis("leftHandPinch").subscribe(() => {
+            //     console.log("Left hand pinch detected!");
+            //     const workflow = findWorkflowByAction("leftHandPinch");
+            //     if (workflow) {
+            //         ws.send(JSON.stringify({ 
+            //             type: "kinesis", 
+            //             action: "leftHandPinch",
+            //             workflow: {
+            //                 description: workflow.description,
+            //                 urls: workflow.urls
+            //             }
+            //         }));
+            //     } else {
+            //         ws.send(JSON.stringify({ type: "kinesis", action: "leftHandPinch" }));
+            //     }
+            // });
 
-            neurosity.kinesis("rightHandPinch").subscribe(() => {
-                console.log("Right hand pinch detected!");
-                const workflow = findWorkflowByAction("rightHandPinch");
-                if (workflow) {
-                    ws.send(JSON.stringify({ 
-                        type: "kinesis", 
-                        action: "rightHandPinch",
-                        workflow: {
-                            description: workflow.description,
-                            urls: workflow.urls
-                        }
-                    }));
-                } else {
-                    ws.send(JSON.stringify({ type: "kinesis", action: "rightHandPinch" }));
-                }
-            });
+            // neurosity.kinesis("rightHandPinch").subscribe(() => {
+            //     console.log("Right hand pinch detected!");
+            //     const workflow = findWorkflowByAction("rightHandPinch");
+            //     if (workflow) {
+            //         ws.send(JSON.stringify({ 
+            //             type: "kinesis", 
+            //             action: "rightHandPinch",
+            //             workflow: {
+            //                 description: workflow.description,
+            //                 urls: workflow.urls
+            //             }
+            //         }));
+            //     } else {
+            //         ws.send(JSON.stringify({ type: "kinesis", action: "rightHandPinch" }));
+            //     }
+            // });
 
-            neurosity.kinesis("leftArm").subscribe(() => {
-                console.log("Left arm gesture detected!");
-                const workflow = findWorkflowByAction("leftArm");
-                if (workflow) {
-                    ws.send(JSON.stringify({ 
-                        type: "kinesis", 
-                        action: "leftArm",
-                        workflow: {
-                            description: workflow.description,
-                            urls: workflow.urls
-                        }
-                    }));
-                } else {
-                    ws.send(JSON.stringify({ type: "kinesis", action: "leftArm" }));
-                }
-            });
+            // neurosity.kinesis("leftArm").subscribe(() => {
+            //     console.log("Left arm gesture detected!");
+            //     const workflow = findWorkflowByAction("leftArm");
+            //     if (workflow) {
+            //         ws.send(JSON.stringify({ 
+            //             type: "kinesis", 
+            //             action: "leftArm",
+            //             workflow: {
+            //                 description: workflow.description,
+            //                 urls: workflow.urls
+            //             }
+            //         }));
+            //     } else {
+            //         ws.send(JSON.stringify({ type: "kinesis", action: "leftArm" }));
+            //     }
+            // });
 
             neurosity.kinesis("rightArm").subscribe(() => {
                 console.log("Right arm gesture detected!");
+
                 const workflow = findWorkflowByAction("rightArm");
                 if (workflow) {
                     ws.send(JSON.stringify({ 
@@ -183,6 +184,14 @@ const main = async () => {
                 } else {
                     ws.send(JSON.stringify({ type: "kinesis", action: "rightArm" }));
                 }
+
+                rightArmSubscription.unsubscribe();
+                console.log("Unsubscribed from rightArm.");
+
+                // Stall for 10 seconds before moving forward   
+                setTimeout(() => {
+                    console.log("Stalling for 10 seconds");
+                }, 10000);
             });
 
             // neurosity.kinesis("doubleBlink").subscribe(() => {
