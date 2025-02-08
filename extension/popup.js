@@ -2,6 +2,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const testButton = document.getElementById('testButton');
     const responseContainer = document.getElementById('responseContainer');
 
+    // Listen for messages from background script
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === "triggerScreenshot") {
+            testButton.click();
+        }
+    });
+
     async function captureScreen() {
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
