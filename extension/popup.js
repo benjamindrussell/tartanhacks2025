@@ -9,6 +9,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === "closePopup") {
+            window.close();
+        }
+    });
+  
+
     async function captureScreen() {
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
