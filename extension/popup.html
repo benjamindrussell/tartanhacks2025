@@ -56,20 +56,49 @@
       border-radius: 6px;
     }
 
-    .workflow-item {
-      padding: 12px 15px;
-      margin: 10px 0;
-      background-color: #1a1a1a;
-      border-radius: 8px;
-      border: 1px solid #4CAF50;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
+    .workflow-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
 
-    .workflow-item:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.1);
+    .section-title {
+      color: #4CAF50;
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .workflow-checkbox {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #4CAF50;
+      border-radius: 4px;
+      margin-left: auto;
+      cursor: pointer;
+      position: relative;
+      background: #1a1a1a;
+    }
+
+    .workflow-checkbox:checked {
+      background: #4CAF50;
+    }
+
+    .workflow-checkbox:checked::after {
+      content: "✓";
+      color: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+    }
+
+    .workflow-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .workflow-title {
@@ -153,14 +182,15 @@
     Workflows in Progress
   </h2>
   <div id="responseContainer">
-    <div class="workflow-title">
-      Workflows so far
-    </div>
-    <div class="workflow-item">
-      <div class="workflow-text">Workflow 1: Write Geological paper</div>
-    </div>
-    <div class="workflow-item">
-      <div class="workflow-text">Workflow 2: Provide email response</div>
+    <div class="workflow-sections">
+      <div>
+        <div class="section-title">Active Workflows</div>
+        <div id="activeWorkflows"></div>
+      </div>
+      <div>
+        <div class="section-title">Recent Workflows</div>
+        <div id="recentWorkflows"></div>
+      </div>
     </div>
     <div class="assistant-section">
       <div class="assistant-header">Your Assistant</div>

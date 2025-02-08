@@ -1,12 +1,12 @@
-const router = require('express').Router();
+const express = require('express');
+const router = express.Router();
 const Workflow = require('../models/Workflow');
-const { updateWorkflowCache } = require('../index');
+const { updateWorkflowCache } = require('../utils/workflowCache');
 
 // Get all workflows
 router.get('/', async (req, res) => {
   try {
-    const workflows = await Workflow.find();
-    // console.log(workflows);
+    const workflows = await Workflow.find().sort({ createdAt: -1 });
     res.json(workflows);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -35,12 +35,34 @@ router.post('/', async (req, res) => {
       title,
       description,
       action,
-      urls
+      urls,
+      active: true
     });
 
     const savedWorkflow = await newWorkflow.save();
-    updateWorkflowCache(savedWorkflow);
+    
+    // Only try to update cache if the function exists
+    if (typeof updateWorkflowCache === 'function') {
+      updateWorkflowCache(savedWorkflow);
+    }
+    
     res.status(201).json(savedWorkflow);
+  } catch (error) {
+    console.error('Workflow creation error:', error);
+    res.status(400).json({ 
+      message: 'Failed to create workflow',
+      error: error.message 
+    });
+  }
+});
+
+// Update workflow active status
+router.patch('/:id/toggle-active', async (req, res) => {
+  try {
+    const workflow = await Workflow.findById(req.params.id);
+    workflow.active = !workflow.active;
+    const updatedWorkflow = await workflow.save();
+    res.json(updatedWorkflow);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

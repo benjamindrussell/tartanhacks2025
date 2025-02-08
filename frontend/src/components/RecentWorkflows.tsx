@@ -1,40 +1,35 @@
-interface Workflow {
-  id: string;
-  title: string;
-  files: number;
-}
+import { WorkflowToggle } from './WorkflowToggle';
+import type { Workflow } from '../types/workflow';
 
 interface RecentWorkflowsProps {
   workflows: Workflow[];
+  onToggleActive?: (workflowId: string) => Promise<void>;
 }
 
-export function RecentWorkflows({ workflows }: RecentWorkflowsProps) {
+export function RecentWorkflows({ workflows, onToggleActive }: RecentWorkflowsProps) {
   return (
-    <div className="mt-8 bg-gray-800 p-4 rounded-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Recent Workflows</h2>
-        <button className="text-gray-400 hover:text-white flex items-center gap-2">
-          Show All
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-3 gap-6">
-        {workflows.map((workflow) => (
-          <div key={workflow.id} className="bg-gray-900 p-6 rounded-lg hover:bg-gray-800 transition-colors">
-            <div className="flex items-start mb-4">
-              <div className="w-8 h-8 bg-green-800 rounded flex items-center justify-center">
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
+    <div className="mt-8">
+      <h2 className="text-xl font-semibold mb-4">Recent Workflows</h2>
+      <div className="grid grid-cols-2 gap-4">
+        {workflows.length > 0 ? (
+          workflows.map((workflow) => (
+            <div key={workflow.id} className="flex flex-col p-4 bg-gray-800 rounded-lg">
+              <div className="flex-1">
+                <h3 className="font-medium text-lg mb-2">{workflow.title}</h3>
+                <p className="text-sm text-gray-400 mb-4">{workflow.description}</p>
+              </div>
+              <div className="flex justify-end mt-auto pt-3 border-t border-gray-700">
+                <WorkflowToggle
+                  workflowId={workflow.id}
+                  isActive={workflow.active || false}
+                  onToggle={() => onToggleActive?.(workflow.id)}
+                />
               </div>
             </div>
-            <h3 className="font-medium mb-2">{workflow.title}</h3>
-            <p className="text-gray-500 text-sm">{workflow.files} files</p>
-          </div>
-        ))}
+          ))
+        ) : (
+          <div className="text-gray-400 col-span-2">No workflows created yet</div>
+        )}
       </div>
     </div>
   );

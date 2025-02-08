@@ -7,15 +7,24 @@ const AVAILABLE_ACTIONS = [
   'rightArm'
 ] as const;
 
+interface FormData {
+  title: string;
+  description: string;
+  action: string;
+  urls: string[];
+}
+
 interface WorkflowFormProps {
   onSuccess?: () => void;
 }
 
 export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [action, setAction] = useState<string>(AVAILABLE_ACTIONS[0]);
-  const [urls, setUrls] = useState<string[]>([]);
+  const [formData, setFormData] = useState<FormData>({
+    title: '',
+    description: '',
+    action: AVAILABLE_ACTIONS[0],
+    urls: ['']
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,12 +35,7 @@ export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title,
-          description,
-          action,
-          urls
-        })
+        body: JSON.stringify(formData)
       });
 
       if (!response.ok) {
@@ -39,10 +43,12 @@ export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
       }
 
       // Reset form
-      setTitle('');
-      setDescription('');
-      setAction(AVAILABLE_ACTIONS[0]);
-      setUrls([]);
+      setFormData({
+        title: '',
+        description: '',
+        action: AVAILABLE_ACTIONS[0],
+        urls: ['']
+      });
       
       onSuccess?.();
       alert('Workflow created successfully!');
@@ -53,11 +59,14 @@ export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
   };
 
   const addUrl = () => {
-    setUrls(prev => [...prev, '']);
+    setFormData(prev => ({ ...prev, urls: [...prev.urls, ''] }));
   };
 
   const removeUrl = (urlIndex: number) => {
-    setUrls(prev => prev.filter((_, index) => index !== urlIndex));
+    setFormData(prev => ({
+      ...prev,
+      urls: prev.urls.filter((_, index) => index !== urlIndex)
+    }));
   };
 
   return (
@@ -69,8 +78,8 @@ export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
         <input
           type="text"
           id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           required
           className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
           placeholder="Enter workflow title"
@@ -83,8 +92,8 @@ export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
         </label>
         <textarea
           id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           required
           className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
           placeholder="Enter workflow description"
@@ -100,8 +109,8 @@ export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
           id="action"
           required
           className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
-          value={action}
-          onChange={(e) => setAction(e.target.value)}
+          value={formData.action}
+          onChange={(e) => setFormData({ ...formData, action: e.target.value })}
         >
           {AVAILABLE_ACTIONS.map((actionType) => (
             <option key={actionType} value={actionType}>
@@ -123,7 +132,7 @@ export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
           </button>
         </div>
         <div className="space-y-2">
-          {urls.map((url, urlIndex) => (
+          {formData.urls.map((url, urlIndex) => (
             <div key={urlIndex} className="flex gap-2">
               <input
                 type="url"
@@ -132,9 +141,9 @@ export function WorkflowForm({ onSuccess }: WorkflowFormProps) {
                 placeholder="Enter URL"
                 value={url}
                 onChange={(e) => {
-                  const newUrls = [...urls];
+                  const newUrls = [...formData.urls];
                   newUrls[urlIndex] = e.target.value;
-                  setUrls(newUrls);
+                  setFormData({ ...formData, urls: newUrls });
                 }}
               />
               <button
