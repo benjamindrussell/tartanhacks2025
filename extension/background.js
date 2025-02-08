@@ -38,6 +38,18 @@ function initializeWebSocket() {
                     }, 500);
                 });
             }
+
+            // Handle closing the popup
+            if (data.type === 'closePopup') {
+                chrome.windows.getCurrent(async (window) => {
+                    // chrome.action.closePopup();
+                    chrome.runtime.sendMessage({ action: "closePopup" });
+                    
+                    // Wait a short moment for popup to close
+                    setTimeout(() => {
+                    }, 500);
+                });
+            }
         } catch (error) {
             console.error('Error processing message:', error);
         }

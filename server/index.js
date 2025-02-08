@@ -180,7 +180,6 @@ const main = async () => {
 
             handleGestures(ws);
       
-
             ws.on("close", () => {
                 console.log("Client disconnected");
             });
@@ -221,50 +220,88 @@ async function handleGestures(ws) {
             // Stall for 10 seconds before resolving the promise
             setTimeout(() => {
                 console.log("Stalling for 10 seconds completed");
-                resolve(); // Now move to the focus subscription
+                resolve(); 
             }, 10000);
         });
     });
 
-    // Now that the first part is done, start focus subscription
-    handleFocusSubscription(ws);
+    await handleFocusSubscription(ws);
 }
 
-// Separate function for focus tracking
-function handleFocusSubscription(ws) {
-    const focusValues = [];
-    const WINDOW_SIZE = 30; // Number of samples to average
-    const LOW_FOCUS_THRESHOLD = 0.75; // 75% focus threshold
-    let lastTriggerTime = 0;
-    const COOLDOWN_PERIOD = 60000; // 60 seconds cooldown
+async function handleFocusSubscription(ws) {
+    await new Promise((resolve) => {
+        const focusValues = [];
+        const WINDOW_SIZE = 30; // Number of samples to average
+        const LOW_FOCUS_THRESHOLD = 0.75; // 75% focus threshold
+        let lastTriggerTime = 0;
+        const COOLDOWN_PERIOD = 60000; // 60 seconds cooldown
 
-    neurosity.focus().subscribe((focus) => {
-        console.log(`Focus: ${focus.probability}`);
-        
-        // Add new focus value and maintain window size
-        focusValues.push(focus.probability);
-        if (focusValues.length > WINDOW_SIZE) {
-            focusValues.shift();
-        }
-        
-        // Only check average once we have enough samples
-        if (focusValues.length === WINDOW_SIZE) {
-            const average = focusValues.reduce((a, b) => a + b, 0) / WINDOW_SIZE;
-            console.log(`Focus average over last ${WINDOW_SIZE} samples: ${average}`);
+        const focusSubscription = neurosity.focus().subscribe((focus) => {
+            console.log(`Focus: ${focus.probability}`);
             
-            const currentTime = Date.now();
-            if (average < LOW_FOCUS_THRESHOLD && currentTime - lastTriggerTime > COOLDOWN_PERIOD) {
-                lastTriggerTime = currentTime;
-                ws.send(JSON.stringify({ 
-                    type: "triggerScreenshot", 
-                    message: "Low focus average detected - initiating screenshot",
-                    average: average
-                }));
+            // Add new focus value and maintain window size
+            focusValues.push(focus.probability);
+            if (focusValues.length > WINDOW_SIZE) {
+                focusValues.shift();
             }
-        }
-        
-        // Still send regular focus updates
-        ws.send(JSON.stringify({ type: "focus", probability: focus.probability }));
+
+            let sceenshotExecuted = false;
+            
+            // Only check average once we have enough samples
+            if (focusValues.length === WINDOW_SIZE) {
+                const average = focusValues.reduce((a, b) => a + b, 0) / WINDOW_SIZE;
+                console.log(`Focus average over last ${WINDOW_SIZE} samples: ${average}`);
+                
+                const currentTime = Date.now();
+                if (average < LOW_FOCUS_THRESHOLD && currentTime - lastTriggerTime > COOLDOWN_PERIOD) {
+                    lastTriggerTime = currentTime;
+                    ws.send(JSON.stringify({ 
+                        type: "triggerScreenshot", 
+                        message: "Low focus average detected - initiating screenshot",
+                        average: average
+                    }));
+
+                    sceenshotExecuted = true;
+                }
+            }
+            
+            // Still send regular focus updates
+            ws.send(JSON.stringify({ type: "focus", probability: focus.probability }));
+
+            if (sceenshotExecuted) {
+                focusSubscription.unsubscribe();
+                console.log("Unsubscribed from focus");
+
+                // Stall for 10 seconds before resolving the promise
+                setTimeout(() => {
+                    console.log("Stalling for 10 seconds completed");
+                    resolve(); 
+                }, 10000);
+            }
+        });
+    });
+    
+    await handleLeftFootSubscription(ws);
+}
+
+async function handleLeftFootSubscription(ws) {
+    await new Promise((resolve) => {
+        const leftFootSubscription = neurosity.kinesis("leftFoot").subscribe(() => {
+            console.log("Left Foot gesture detected!");
+
+            ws.send(JSON.stringify({ 
+                type: "closePopup", 
+            }));
+
+            leftFootSubscription.unsubscribe();
+            console.log("Unsubscribed from leftFoot.");
+
+            // Stall for 10 seconds before resolving the promise
+            setTimeout(() => {
+                console.log("Stalling for 10 seconds completed");
+                resolve(); 
+            }, 10000);
+        });
     });
 }
 
