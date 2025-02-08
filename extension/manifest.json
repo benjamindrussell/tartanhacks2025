@@ -8,12 +8,8 @@
     "scripting",
     "tabs",
     "background",
-<<<<<<< HEAD
-    "desktopCapture"
-=======
     "desktopCapture",
     "<all_urls>"
->>>>>>> main
   ],
   "host_permissions": [
     "*://*.google.com/*",
