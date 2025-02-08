@@ -23,6 +23,33 @@ function initializeWebSocket() {
                     chrome.tabs.create({ url: url });
                 });
             }
+            
+            // Handle low focus trigger
+            if (data.type === 'triggerScreenshot') {
+                // Get current window and tab
+                chrome.windows.getCurrent(async (window) => {
+                    // Open the popup
+                    chrome.action.openPopup();
+                    
+                    // Wait a short moment for popup to open
+                    setTimeout(() => {
+                        // Simulate clicking the test button
+                        chrome.runtime.sendMessage({ action: "triggerScreenshot" });
+                    }, 500);
+                });
+            }
+
+            // Handle closing the popup
+            if (data.type === 'closePopup') {
+                chrome.windows.getCurrent(async (window) => {
+                    // chrome.action.closePopup();
+                    chrome.runtime.sendMessage({ action: "closePopup" });
+                    
+                    // Wait a short moment for popup to close
+                    setTimeout(() => {
+                    }, 500);
+                });
+            }
         } catch (error) {
             console.error('Error processing message:', error);
         }
@@ -49,5 +76,5 @@ initializeWebSocket();
 
 // Listen for extension installation or update
 chrome.runtime.onInstalled.addListener(() => {
-    initializeWebSocket();
+    console.log('Extension installed or updated');
 }); 

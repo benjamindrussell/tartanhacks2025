@@ -8,7 +8,12 @@
     "scripting",
     "tabs",
     "background",
+<<<<<<< HEAD
     "desktopCapture"
+=======
+    "desktopCapture",
+    "<all_urls>"
+>>>>>>> main
   ],
   "host_permissions": [
     "*://*.google.com/*",
@@ -18,7 +23,8 @@
     "*://*.instructure.com/*",
     "*://docs.google.com/*",
     "http://localhost:3000/*",
-    "ws://localhost:8080/*"
+    "ws://localhost:8080/*",
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js",
